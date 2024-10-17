@@ -15,7 +15,7 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v2
       with:
-        java-version: '11'  # or your preferred Java version
+        java-version: '11'
         distribution: 'adopt'
 
     - name: Build with Maven
@@ -23,3 +23,28 @@ jobs:
 
     - name: Run tests
       run: mvn test
+
+  cfn-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install cfn-lint
+      run: pip install cfn-lint
+
+    - name: Run cfn-lint on all CloudFormation templates
+      run: |
+        set -e
+        for template in $(find . -type f \( -name '*.yaml' -o -name '*.yml' \) -not -path '*/.*')
+        do
+          if grep -q 'AWSTemplateFormatVersion' "$template"; then
+            echo "Linting $template"
+            cfn-lint "$template"
+          fi
+        done
