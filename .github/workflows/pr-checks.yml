@@ -8,18 +8,33 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK
-      uses: actions/setup-java@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        java-version: '11'  # or your preferred Java version
-        distribution: 'adopt'
+        python-version: '3.x'
 
-    - name: Build with Maven
-      run: mvn clean install
+    - name: Install cfn-lint
+      run: pip install cfn-lint
 
-    - name: Run tests
-      run: mvn test
+    - name: Run cfn-lint on CloudFormation templates
+      run: |
+        set -e
+        found_template=false
+        for file in $(find . -type f \( -name '*.yaml' -o -name '*.yml' \) -not -path '*/.*')
+        do
+          if grep -q '^Resources:' "$file"; then
+            echo "Linting CloudFormation template: $file"
+            cfn-lint "$file"
+            found_template=true
+          else
+            echo "Skipping $file (not identified as a CloudFormation template)"
+          fi
+        done
+        if [ "$found_template" = false ] ; then
+          echo "No CloudFormation templates found to lint"
+          exit 0
+        fi
