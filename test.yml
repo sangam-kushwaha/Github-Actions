@@ -1,17 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CloudFormation template for creating an S3 bucket'
+Description: 'CloudFormation template for creating an S3 bucket with intentional errors'
 
 Resources:
   MyS3Bucket:
-    Type: 'AWS::S3::Bucket'
+    Type: 'AWS::S3::Buckett'  # Error: Typo in resource type
     Properties:
-      #BucketName: !Sub '${AWS::StackName}-my-unique-bucket-name'
       VersioningConfiguration:
-        Status: Enabled
+        Status: EnabledInvalid  # Error: Invalid value for Status
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
+              SSEAlgorithm: AES257  # Error: Invalid encryption algorithm
+
+  InvalidResource:  # Error: Missing required 'Type' property
+    Properties:
+      SomeProp: SomeValue
 
 Outputs:
   BucketName:
@@ -19,4 +22,4 @@ Outputs:
     Value: !Ref MyS3Bucket
   BucketARN:
     Description: 'ARN of the S3 bucket'
-    Value: !GetAtt MyS3Bucket.Arn
+    Value: !GetAtt MyS3Bucket.InvalidAttribute  # Error: Invalid attribute for GetAtt
