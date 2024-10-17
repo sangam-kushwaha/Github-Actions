@@ -6,6 +6,27 @@ on:
       - main
 
 jobs:
+  cfn-nag:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run cfn-nag
+      uses: stelligent/cfn_nag@master
+      with:
+        input_path: .
+        extra_args: --fail-on-warnings
+    - name: Display cfn-nag results
+      if: always()
+      run: |
+        if [ -d cfn_nag_scan_results ]; then
+          for file in cfn_nag_scan_results/*.txt; do
+            echo "Results for $file:"
+            cat "$file"
+            echo "----------------------"
+          done
+        else
+          echo "No cfn-nag results found"
+        fi
   build-and-test:
     runs-on: ubuntu-latest
     
