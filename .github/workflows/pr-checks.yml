@@ -10,22 +10,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Run cfn-nag
-      uses: stelligent/cfn_nag@master
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
       with:
-        input_path: .
-        extra_args: --fail-on-warnings
-    - name: Display cfn-nag results
-      if: always()
+        ruby-version: '3.0' # You can adjust this version as needed
+
+    - name: Install cfn-nag
+      run: gem install cfn-nag
+
+    - name: Run cfn-nag
       run: |
-        if [ -d cfn_nag_scan_results ]; then
-          for file in cfn_nag_scan_results/*.txt; do
-            echo "Results for $file:"
-            cat "$file"
-            echo "----------------------"
-          done
+        set -e
+        found_template=false
+        for file in $(find . -type f \( -name '*.yaml' -o -name '*.yml' \) -not -path '*/.*')
+        do
+          if grep -q '^Resources:' "$file"; then
+            echo "Checking CloudFormation template: $file"
+            cfn_nag_scan --input-path "$file" --output-format txt
+            found_template=true
+          else
+            echo "Skipping $file (not identified as a CloudFormation template)"
+          fi
+        done
+        if [ "$found_template" = false ] ; then
+          echo "No CloudFormation templates found to check"
+          exit 0
+        fi
+
+    - name: Check cfn-nag results
+      run: |
+        if grep -rq "FAIL" .; then
+          echo "CFN-NAG found failures. Check the output above for details."
+          exit 1
+        elif grep -rq "WARN" .; then
+          echo "CFN-NAG found warnings. Check the output above for details."
+          exit 1
         else
-          echo "No cfn-nag results found"
+          echo "No failures or warnings found by CFN-NAG."
         fi
   build-and-test:
     runs-on: ubuntu-latest
