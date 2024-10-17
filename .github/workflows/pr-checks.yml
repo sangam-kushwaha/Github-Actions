@@ -6,6 +6,38 @@ on:
       - main
 
 jobs:
+  cfn-nag:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0' # You can adjust this version as needed
+
+    - name: Install cfn-nag
+      run: gem install cfn-nag
+
+    - name: Run cfn-nag
+      run: |
+        set -e
+        found_template=false
+        for file in $(find . -type f \( -name '*.yaml' -o -name '*.yml' \) -not -path '*/.*')
+        do
+          if grep -q '^Resources:' "$file"; then
+            echo "Checking CloudFormation template: $file"
+            cfn_nag_scan --input-path "$file" --output-format txt
+            found_template=true
+          else
+            echo "Skipping $file (not identified as a CloudFormation template)"
+          fi
+        done
+        if [ "$found_template" = false ] ; then
+          echo "No CloudFormation templates found to check"
+          exit 0
+        fi
+
   build-and-test:
     runs-on: ubuntu-latest
     
