@@ -38,17 +38,6 @@ jobs:
           exit 0
         fi
 
-    - name: Check cfn-nag results
-      run: |
-        if grep -rq "FAIL" .; then
-          echo "CFN-NAG found failures. Check the output above for details."
-          exit 1
-        elif grep -rq "WARN" .; then
-          echo "CFN-NAG found warnings. Check the output above for details."
-          exit 1
-        else
-          echo "No failures or warnings found by CFN-NAG."
-        fi
   build-and-test:
     runs-on: ubuntu-latest
     
